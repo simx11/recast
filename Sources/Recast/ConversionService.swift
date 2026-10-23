@@ -45,11 +45,19 @@ final class ConversionService {
             return ConversionSummary(format: format, outputs: [], failures: ["There's no image in what you dropped."])
         }
 
-        let jobs = sources.map { (source: $0, directory: settings.outputFolder(forOriginalIn: $0.originalFolder)) }
         let options = settings.conversionOptions
-        let result = await Task.detached(priority: .userInitiated) {
+        // ImageIO can't read SVG, so WebKit renders those first.
+        let (jobs, rendered) = await SVGRenderer.render(
+            sources.map { (source: $0, directory: settings.outputFolder(forOriginalIn: $0.originalFolder)) },
+            for: format,
+            scratch: intake.workDirectory
+        )
+        var result = await Task.detached(priority: .userInitiated) {
             ImageConverter.convert(jobs, to: format, options: options)
         }.value
+        result.outputs += rendered.outputs
+        result.failures += rendered.failures
+        result.thumbnail = result.thumbnail ?? rendered.thumbnail
 
         if !result.outputs.isEmpty {
             finish(result.outputs, format: format)

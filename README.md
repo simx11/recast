@@ -41,6 +41,7 @@ If the original's folder can't be written to, the file goes to Downloads instead
 | GIF | ✓ | ✓ |
 | BMP | ✓ | ✓ |
 | PDF | ✓ | – |
+| SVG | – | ✓ |
 | WebP, JPEG XL, camera RAW, PSD, ICO and more | – | ✓ |
 
 By default the format bar shows PNG, JPEG, HEIC, AVIF, TIFF and PDF. GIF and BMP can be turned on in **Settings › Formats**. A format your Mac can't write (HEIC and AVIF encoding depend on the macOS version) doesn't appear. macOS can read WebP but has no WebP encoder, so WebP only works as a source.
@@ -53,6 +54,7 @@ While converting, Recast:
 - uses the main image of files that contain several images, and only the first frame of an animated GIF
 - applies the **Quality** setting (default 85 %) to JPEG, HEIC and AVIF
 - makes each PDF a single page sized from the image's resolution (72 dpi if the image doesn't say)
+- draws SVGs at twice their size, and small icons at 1024 pixels on the long side. Converting an SVG to PDF keeps it as sharp vector graphics
 
 ## Settings
 

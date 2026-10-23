@@ -25,7 +25,7 @@ public struct ImageSource: Sendable {
 public final class ImageIntake: @unchecked Sendable {
     /// Image data types, best first: originals before re-encoded TIFF.
     public static let imageDataTypes: [NSPasteboard.PasteboardType] = [
-        "public.heic", "public.heif", "org.webmproject.webp", "public.avif", "public.png",
+        "public.svg-image", "public.heic", "public.heif", "org.webmproject.webp", "public.avif", "public.png",
         "public.jpeg", "com.compuserve.gif", "public.tiff", "com.microsoft.bmp",
     ].map { NSPasteboard.PasteboardType($0) }
 
@@ -129,7 +129,7 @@ public final class ImageIntake: @unchecked Sendable {
     }
 
     private static func isReadableImage(_ url: URL) -> Bool {
-        CGImageSourceCreateWithURL(url as CFURL, nil).flatMap(CGImageSourceGetType) != nil
+        SVGRenderer.isSVG(url) || CGImageSourceCreateWithURL(url as CFURL, nil).flatMap(CGImageSourceGetType) != nil
     }
 
     /// Fetches the original image when a browser only provides its address. Also decodes `data:` URLs.
