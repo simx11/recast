@@ -9,6 +9,8 @@ enum OverlayMetrics {
     static let padding: CGFloat = 10
     static let headerHeight: CGFloat = 24
     static let minimumWidth: CGFloat = 360
+    /// The compact size the panel shrinks to once a conversion is done.
+    static let resultSize = CGSize(width: 400, height: 76)
     static let cornerRadius: CGFloat = 22
     static let tileCornerRadius = cornerRadius - padding
 
@@ -52,7 +54,6 @@ final class OverlayModel: ObservableObject {
     @Published var formats: [ImageFormat] = []
     @Published var highlighted: ImageFormat?
     @Published var phase = Phase.choosing
-    @Published var isHovering = false
     var dismiss: () -> Void = {}
 
     var isAcceptingDrops: Bool {
@@ -69,12 +70,19 @@ final class OverlayController {
     private let service: ConversionService
     private(set) var panel: OverlayPanel!
     private var hideTask: Task<Void, Never>?
+    private var dismissTimer: Timer?
+    private var clickMonitor: Any?
+    private var resultShownAt = Date()
+    private var resultMouseStart = NSPoint.zero
+    private var resultMouseMoved = false
 
     init(settings: AppSettings, service: ConversionService) {
         self.settings = settings
         self.service = service
         panel = OverlayPanel(model: model) { [weak self] intake, format in
             self?.convert(intake, to: format)
+        } onCancel: { [weak self] in
+            self?.hide()
         }
         model.dismiss = { [weak self] in self?.hide() }
     }
@@ -107,23 +115,91 @@ final class OverlayController {
         }
 
         Task {
-            let summary = await service.run(intake, to: format)
-            model.phase = summary.outputs.isEmpty ? .failed(summary.subtitle) : .finished(summary)
-            panel.show()
-            if !summary.outputs.isEmpty {
-                NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
-            }
-            scheduleHide(after: summary.outputs.isEmpty ? 5 : 3.5)
+            showOutcome(await service.run(intake, to: format))
         }
     }
 
     func hide() {
         hideTask?.cancel()
+        stopDismissTracking()
         panel.hide()
+    }
+
+    private func showOutcome(_ summary: ConversionSummary) {
+        model.phase = summary.outputs.isEmpty ? .failed(summary.subtitle) : .finished(summary)
+        shrinkToResultSize()
+        panel.show()
+        // Key (without activating Recast) so Esc reaches the panel.
+        panel.makeKey()
+        if !summary.outputs.isEmpty {
+            NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
+        }
+        dismissAutomatically(after: summary.outputs.isEmpty ? 5 : 3)
+    }
+
+    private func shrinkToResultSize() {
+        let size = OverlayMetrics.resultSize
+        let current = panel.frame
+        // Centre under the cursor if it's on the bar (it just dropped there), so the result appears where you're looking.
+        let mouse = NSEvent.mouseLocation
+        let centerX = current.contains(mouse) ? mouse.x : current.midX
+        var frame = NSRect(x: centerX - size.width / 2, y: current.midY - size.height / 2, width: size.width, height: size.height)
+        if let visible = panel.screen?.visibleFrame {
+            frame.origin.x = min(max(frame.minX, visible.minX + 8), visible.maxX - size.width - 8)
+            frame.origin.y = min(max(frame.minY, visible.minY + 8), visible.maxY - size.height - 8)
+        }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            panel.animator().setFrame(frame, display: true)
+        }
+    }
+
+    /// Puts the result away on Esc (see `OverlayPanel`), a click anywhere else, moving the mouse away, or after a timeout.
+    /// Moving the mouse onto the result keeps it open, so you can drag the thumbnail or click Show in Finder.
+    private func dismissAutomatically(after timeout: TimeInterval) {
+        stopDismissTracking()
+        resultShownAt = Date()
+        resultMouseStart = NSEvent.mouseLocation
+        resultMouseMoved = false
+
+        clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] _ in
+            MainActor.assumeIsolated { self?.hide() }
+        }
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.checkDismissal(timeout: timeout) }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        dismissTimer = timer
+    }
+
+    private func checkDismissal(timeout: TimeInterval) {
+        // Holding the button means the thumbnail is being dragged out; wait until it's dropped.
+        guard NSEvent.pressedMouseButtons == 0 else { return }
+        let elapsed = Date().timeIntervalSince(resultShownAt)
+        let mouse = NSEvent.mouseLocation
+        // Ignore small nudges; moving off somewhere else is what counts.
+        if hypot(mouse.x - resultMouseStart.x, mouse.y - resultMouseStart.y) > 24 {
+            resultMouseMoved = true
+        }
+        let isOverPanel = panel.frame.insetBy(dx: -16, dy: -16).contains(mouse)
+        // A cursor still resting where the image was dropped doesn't count as wanting the result to stay.
+        if resultMouseMoved ? (!isOverPanel && elapsed > 0.4) : elapsed >= timeout {
+            hide()
+        }
+    }
+
+    private func stopDismissTracking() {
+        dismissTimer?.invalidate()
+        dismissTimer = nil
+        if let clickMonitor {
+            NSEvent.removeMonitor(clickMonitor)
+        }
+        clickMonitor = nil
     }
 
     private func present(near point: NSPoint, placement: Placement) {
         hideTask?.cancel()
+        stopDismissTracking()
         let size = OverlayMetrics.panelSize(tileCount: model.formats.count)
         let screen = NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) } ?? NSScreen.main
         let visible = screen?.visibleFrame ?? NSRect(origin: .zero, size: size)
@@ -150,19 +226,18 @@ final class OverlayController {
         hideTask?.cancel()
         hideTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(seconds))
-            guard let self, !Task.isCancelled else { return }
-            if model.isHovering, !model.isAcceptingDrops {
-                scheduleHide(after: 1)
-            } else {
-                panel.hide()
-            }
+            guard let self, !Task.isCancelled, model.isAcceptingDrops else { return }
+            panel.hide()
         }
     }
 }
 
 /// A floating panel that never activates Recast, so the app you're dragging from stays in front.
 final class OverlayPanel: NSPanel {
-    init(model: OverlayModel, onDrop: @escaping (ImageIntake, ImageFormat) -> Void) {
+    private let onCancel: () -> Void
+
+    init(model: OverlayModel, onDrop: @escaping (ImageIntake, ImageFormat) -> Void, onCancel: @escaping () -> Void) {
+        self.onCancel = onCancel
         super.init(
             contentRect: NSRect(origin: .zero, size: OverlayMetrics.panelSize(tileCount: 1)),
             styleMask: [.borderless, .nonactivatingPanel],
@@ -183,6 +258,15 @@ final class OverlayPanel: NSPanel {
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    /// Any key puts the panel away; Esc is the one people will reach for.
+    override func keyDown(with event: NSEvent) {
+        onCancel()
+    }
+
+    override func cancelOperation(_ sender: Any?) {
+        onCancel()
+    }
 
     func show() {
         if !isVisible {

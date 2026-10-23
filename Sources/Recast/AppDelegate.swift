@@ -37,6 +37,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.$isDragToConvertEnabled
             .sink { [dragMonitor] in dragMonitor.isEnabled = $0 }
             .store(in: &subscriptions)
+        settings.$showsMenuBarIcon
+            .sink { [statusMenu] in statusMenu?.isVisible = $0 }
+            .store(in: &subscriptions)
         dragMonitor.start()
 
         #if DEBUG

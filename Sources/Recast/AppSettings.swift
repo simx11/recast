@@ -63,6 +63,7 @@ final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
     @Published var isDragToConvertEnabled: Bool { didSet { defaults.set(isDragToConvertEnabled, forKey: Key.enabled) } }
+    @Published var showsMenuBarIcon: Bool { didSet { defaults.set(showsMenuBarIcon, forKey: Key.showsMenuBarIcon) } }
     @Published var trigger: TriggerKey { didSet { defaults.set(trigger.rawValue, forKey: Key.trigger) } }
     @Published var enabledFormats: Set<ImageFormat> { didSet { defaults.set(enabledFormats.map(\.rawValue).sorted(), forKey: Key.formats) } }
     @Published var quality: Double { didSet { defaults.set(quality, forKey: Key.quality) } }
@@ -83,6 +84,7 @@ final class AppSettings: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         isDragToConvertEnabled = defaults.object(forKey: Key.enabled) as? Bool ?? true
+        showsMenuBarIcon = defaults.object(forKey: Key.showsMenuBarIcon) as? Bool ?? true
         trigger = defaults.string(forKey: Key.trigger).flatMap(TriggerKey.init) ?? .control
         enabledFormats = (defaults.stringArray(forKey: Key.formats)).map { Set($0.compactMap(ImageFormat.init)) } ?? ImageFormat.defaultSelection
         quality = defaults.object(forKey: Key.quality) as? Double ?? 0.85
@@ -125,6 +127,7 @@ final class AppSettings: ObservableObject {
 
     private enum Key {
         static let enabled = "dragToConvertEnabled"
+        static let showsMenuBarIcon = "showsMenuBarIcon"
         static let trigger = "trigger"
         static let formats = "enabledFormats"
         static let quality = "quality"

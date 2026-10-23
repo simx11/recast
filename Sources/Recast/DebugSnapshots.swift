@@ -36,11 +36,16 @@ enum DebugSnapshots {
         }
         windows.settingsWindow?.close()
 
-        // Converted files go to a scratch folder, not the real Downloads.
+        // Converted files go to a scratch folder, not the real Downloads. The user's choice is put back afterwards.
         let output = folder.appendingPathComponent("output", isDirectory: true)
         try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let savedLocation = (settings.saveLocation, settings.customFolder)
         settings.saveLocation = .custom
         settings.customFolder = output
+        defer {
+            settings.saveLocation = savedLocation.0
+            settings.customFolder = savedLocation.1
+        }
 
         let screen = NSScreen.main!.visibleFrame
         overlay.showFormats(near: NSPoint(x: screen.midX, y: screen.midY))
@@ -57,6 +62,12 @@ enum DebugSnapshots {
         await waitForResult(overlay)
         save(overlay.panel, as: "result", in: folder)
         report(overlay, label: "file → JPEG")
+        print("SNAPSHOT: result panel is key: \(overlay.panel.isKeyWindow), size: \(overlay.panel.frame.size)")
+        let shownAt = Date()
+        while overlay.panel.isVisible, Date().timeIntervalSince(shownAt) < 8 {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        print("SNAPSHOT: result hid by itself: \(!overlay.panel.isVisible) after \(String(format: "%.1f", Date().timeIntervalSince(shownAt)))s")
 
         // Raw image data plus a link, the way browsers often hand images over, dropped on HEIC.
         overlay.showFormats(near: NSPoint(x: screen.midX, y: screen.midY))
@@ -67,8 +78,13 @@ enum DebugSnapshots {
         item.setString("https://example.com/photos/sunset.png?w=1200", forType: .URL)
         browserPasteboard.writeObjects([item])
         await drop(browserPasteboard, on: .heic, overlay: overlay, snapshot: nil, folder: folder)
-        await waitForResult(overlay)
+        await waitForResult(overlay, settle: false)
         report(overlay, label: "browser data → HEIC")
+        // Press Esc straight away, before moving the mouse could put the result away by itself.
+        let wasVisible = overlay.panel.isVisible
+        overlay.panel.cancelOperation(nil)
+        try? await Task.sleep(for: .milliseconds(400))
+        print("SNAPSHOT: Esc hid result: \(wasVisible && !overlay.panel.isVisible)")
 
         // Something that isn't an image.
         overlay.showFormats(near: NSPoint(x: screen.midX, y: screen.midY))
@@ -109,11 +125,13 @@ enum DebugSnapshots {
         print("SNAPSHOT: drop accepted \(accepted)")
     }
 
-    private static func waitForResult(_ overlay: OverlayController) async {
+    private static func waitForResult(_ overlay: OverlayController, settle: Bool = true) async {
         for _ in 0..<100 {
             switch overlay.model.phase {
             case .finished, .failed:
-                await pause()
+                if settle {
+                    await pause()
+                }
                 return
             default:
                 try? await Task.sleep(for: .milliseconds(100))

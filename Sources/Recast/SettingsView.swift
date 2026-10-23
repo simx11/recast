@@ -60,14 +60,22 @@ struct GeneralSettingsView: View {
             }
 
             Section {
+                Toggle("Show in menu bar", isOn: $settings.showsMenuBarIcon)
                 Toggle("Open Recast at login", isOn: $loginItem.isEnabled)
                 if let error = loginItem.error {
                     Text(error).font(.caption).foregroundStyle(.red)
                 }
+            } header: {
+                Text("App")
+            } footer: {
+                if !settings.showsMenuBarIcon {
+                    Text("Drag to convert keeps working. To get back here, open Recast again from Applications or Spotlight.")
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 640)
+        .frame(width: 520, height: 700)
         .onChange(of: settings.saveLocation) { _, location in
             if location == .custom, settings.customFolder == nil {
                 chooseFolder()

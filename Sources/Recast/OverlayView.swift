@@ -9,7 +9,6 @@ struct OverlayView: View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .panelBackground()
-            .onHover { model.isHovering = $0 }
             .animation(.snappy(duration: 0.22), value: model.phase.id)
     }
 
@@ -94,28 +93,27 @@ private struct ResultRow: View {
     let dismiss: () -> Void
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             thumbnail
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(summary.title)
                     .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(summary.subtitle)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11.5))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            Spacer(minLength: 8)
+            Spacer(minLength: 6)
             Button {
                 NSWorkspace.shared.activateFileViewerSelecting(summary.outputs)
                 dismiss()
             } label: {
                 Label("Show in Finder", systemImage: "folder")
             }
-            .controlSize(.large)
         }
-        .padding(.horizontal, 18)
+        .padding(.horizontal, 14)
     }
 
     private var thumbnail: some View {
@@ -129,20 +127,20 @@ private struct ResultRow: View {
                     Image(systemName: "photo").font(.title2).foregroundStyle(.secondary)
                 }
             }
-            .frame(width: 60, height: 60)
+            .frame(width: 48, height: 48)
             .background(.quaternary)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(.separator)
+                RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(.separator)
             }
 
             Image(systemName: "checkmark")
-                .font(.system(size: 10, weight: .heavy))
+                .font(.system(size: 9, weight: .heavy))
                 .foregroundStyle(.white)
-                .frame(width: 20, height: 20)
+                .frame(width: 18, height: 18)
                 .background(Circle().fill(.green))
                 .overlay(Circle().strokeBorder(.white, lineWidth: 2))
-                .offset(x: 6, y: 6)
+                .offset(x: 5, y: 5)
         }
         // Drag the converted file straight into another app.
         .onDrag { NSItemProvider(contentsOf: summary.outputs[0]) ?? NSItemProvider() }
@@ -158,20 +156,20 @@ private struct FailureRow: View {
     let message: String
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 28))
+                .font(.system(size: 24))
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 3) {
                 Text("Couldn't convert").font(.system(size: 13, weight: .semibold))
                 Text(message)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11.5))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 16)
     }
 }
 

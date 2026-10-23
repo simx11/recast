@@ -12,9 +12,14 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private let settings: AppSettings
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
+    var isVisible: Bool {
+        get { statusItem.isVisible }
+        set { statusItem.isVisible = newValue }
+    }
+
     /// Bottom-centre of the menu bar icon, in screen coordinates.
     var anchorPoint: NSPoint? {
-        guard let button = statusItem.button, let window = button.window else { return nil }
+        guard statusItem.isVisible, let button = statusItem.button, let window = button.window else { return nil }
         let frame = window.convertToScreen(button.convert(button.bounds, to: nil))
         return NSPoint(x: frame.midX, y: frame.minY)
     }
