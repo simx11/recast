@@ -109,3 +109,7 @@ Debug builds can draw every window to PNG files and send sample drops through th
 scripts/build.sh debug
 build/Recast.app/Contents/MacOS/Recast --snapshot /tmp/recast-snapshots
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).
