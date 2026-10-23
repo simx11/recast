@@ -21,8 +21,8 @@ struct WelcomeView: View {
 
             VStack(alignment: .leading, spacing: 18) {
                 Step(symbol: "hand.draw", title: "Start dragging an image", detail: "From Safari, Chrome, Finder, Mail or any other app.")
-                Step(symbol: "keyboard", title: "Hold \(settings.trigger.label)", detail: "The format bar pops up just above your cursor.")
-                Step(symbol: "tray.and.arrow.down", title: "Drop it on a format", detail: "The converted copy lands next to the original, or in Downloads if it came from the web.")
+                Step(symbol: "keyboard", title: "Hold \(settings.trigger.label)", detail: "Press it once the drag has started, and the format bar pops up above your cursor. You can pick another key in Settings.")
+                Step(symbol: "tray.and.arrow.down", title: "Drop it on a format", detail: saveDetail)
             }
             .padding(.vertical, 28)
 
@@ -47,6 +47,20 @@ struct WelcomeView: View {
         .padding(.top, 36)
         .padding(.bottom, 24)
         .frame(width: 500)
+    }
+
+    /// Where the file ends up with the current settings.
+    private var saveDetail: String {
+        switch settings.saveLocation {
+        case .nextToOriginal:
+            "The converted copy is saved next to the original. Images from a browser go to Downloads."
+        case .downloads:
+            "The converted copy is saved to Downloads."
+        case .desktop:
+            "The converted copy is saved to your Desktop."
+        case .custom:
+            "The converted copy is saved to \(settings.customFolder.map { FileManager.default.displayName(atPath: $0.path) } ?? "Downloads")."
+        }
     }
 }
 

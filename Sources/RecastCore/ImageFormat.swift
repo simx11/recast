@@ -40,10 +40,10 @@ public enum ImageFormat: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .png: "Lossless and keeps transparency."
         case .jpeg: "Opens everywhere. Small files, no transparency."
-        case .heic: "Apple's photo format. About half the size of JPEG."
+        case .heic: "The iPhone photo format. Much smaller than JPEG at similar quality."
         case .avif: "Modern web format with very small files."
         case .tiff: "Lossless, for print and archiving."
-        case .gif: "Limited to 256 colors."
+        case .gif: "256 colors, no animation."
         case .bmp: "Uncompressed bitmap for older software."
         case .pdf: "A single-page document sized to the image."
         }

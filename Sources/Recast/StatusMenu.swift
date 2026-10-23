@@ -39,7 +39,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        let hint = NSMenuItem(title: "Drag an image and hold \(settings.trigger.symbols) to convert", action: nil, keyEquivalent: "")
+        let hint = NSMenuItem(title: "Drag an image, then hold \(settings.trigger.label)", action: nil, keyEquivalent: "")
         hint.isEnabled = false
         menu.addItem(hint)
         menu.addItem(.separator())

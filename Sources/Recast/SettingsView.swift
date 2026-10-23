@@ -20,7 +20,7 @@ struct GeneralSettingsView: View {
             } header: {
                 Text("Shortcut")
             } footer: {
-                Text("Start dragging an image in any app, then hold \(settings.trigger.label). Drop it on a format to convert it.")
+                Text("Start dragging an image in any app, then hold \(settings.trigger.label) and drop the image on a format. Press the key after the drag has started.")
                     .foregroundStyle(.secondary)
             }
 
