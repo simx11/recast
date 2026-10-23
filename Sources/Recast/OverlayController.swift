@@ -70,11 +70,7 @@ final class OverlayController {
     private let service: ConversionService
     private(set) var panel: OverlayPanel!
     private var hideTask: Task<Void, Never>?
-    private var dismissTimer: Timer?
     private var clickMonitor: Any?
-    private var resultShownAt = Date()
-    private var resultMouseStart = NSPoint.zero
-    private var resultMouseMoved = false
 
     init(settings: AppSettings, service: ConversionService) {
         self.settings = settings
@@ -134,7 +130,7 @@ final class OverlayController {
         if !summary.outputs.isEmpty {
             NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
         }
-        dismissAutomatically(after: summary.outputs.isEmpty ? 5 : 3)
+        dismissOnClickElsewhere()
     }
 
     private func shrinkToResultSize() {
@@ -154,43 +150,16 @@ final class OverlayController {
         }
     }
 
-    /// Puts the result away on Esc (see `OverlayPanel`), a click anywhere else, moving the mouse away, or after a timeout.
-    /// Moving the mouse onto the result keeps it open, so you can drag the thumbnail or click Show in Finder.
-    private func dismissAutomatically(after timeout: TimeInterval) {
+    /// The result stays until you click outside it or press Esc (see `OverlayPanel`), so there's time to reach
+    /// Show in Finder or drag the thumbnail. Clicks inside the panel are Recast's own events and don't count.
+    private func dismissOnClickElsewhere() {
         stopDismissTracking()
-        resultShownAt = Date()
-        resultMouseStart = NSEvent.mouseLocation
-        resultMouseMoved = false
-
         clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] _ in
             MainActor.assumeIsolated { self?.hide() }
-        }
-        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.checkDismissal(timeout: timeout) }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        dismissTimer = timer
-    }
-
-    private func checkDismissal(timeout: TimeInterval) {
-        // Holding the button means the thumbnail is being dragged out; wait until it's dropped.
-        guard NSEvent.pressedMouseButtons == 0 else { return }
-        let elapsed = Date().timeIntervalSince(resultShownAt)
-        let mouse = NSEvent.mouseLocation
-        // Ignore small nudges; moving off somewhere else is what counts.
-        if hypot(mouse.x - resultMouseStart.x, mouse.y - resultMouseStart.y) > 24 {
-            resultMouseMoved = true
-        }
-        let isOverPanel = panel.frame.insetBy(dx: -16, dy: -16).contains(mouse)
-        // A cursor still resting where the image was dropped doesn't count as wanting the result to stay.
-        if resultMouseMoved ? (!isOverPanel && elapsed > 0.4) : elapsed >= timeout {
-            hide()
         }
     }
 
     private func stopDismissTracking() {
-        dismissTimer?.invalidate()
-        dismissTimer = nil
         if let clickMonitor {
             NSEvent.removeMonitor(clickMonitor)
         }

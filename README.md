@@ -31,7 +31,7 @@ When converting, Recast:
 
 - **Drag and hold:** start a drag, then hold the shortcut (⌃ Control by default; change it in Settings). The bar stays up until you let go of the mouse.
 - **Menu bar:** *Convert Images To* converts files you pick, and *Convert Clipboard Image To* converts whatever you copied with "Copy Image".
-- **After converting:** drag the thumbnail into another app, double-click it to open, or click *Show in Finder*. The result goes away after a few seconds, or as soon as you move the mouse away, click somewhere else or press Esc.
+- **After converting:** drag the thumbnail into another app, double-click it to open, or click *Show in Finder*. The result stays until you click somewhere else or press Esc.
 
 Settings let you choose which formats appear in the bar, JPEG/HEIC/AVIF quality, where files are saved, whether to keep metadata, whether the menu bar icon is shown, and whether Recast opens at login. With the icon hidden, opening Recast again from Applications or Spotlight brings up its settings.
 

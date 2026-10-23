@@ -63,11 +63,10 @@ enum DebugSnapshots {
         save(overlay.panel, as: "result", in: folder)
         report(overlay, label: "file → JPEG")
         print("SNAPSHOT: result panel is key: \(overlay.panel.isKeyWindow), size: \(overlay.panel.frame.size)")
-        let shownAt = Date()
-        while overlay.panel.isVisible, Date().timeIntervalSince(shownAt) < 8 {
-            try? await Task.sleep(for: .milliseconds(100))
-        }
-        print("SNAPSHOT: result hid by itself: \(!overlay.panel.isVisible) after \(String(format: "%.1f", Date().timeIntervalSince(shownAt)))s")
+        // Without a click or Esc the result stays put.
+        try? await Task.sleep(for: .seconds(4))
+        print("SNAPSHOT: result still up after 4s: \(overlay.panel.isVisible)")
+        overlay.hide()
 
         // Raw image data plus a link, the way browsers often hand images over, dropped on HEIC.
         overlay.showFormats(near: NSPoint(x: screen.midX, y: screen.midY))
