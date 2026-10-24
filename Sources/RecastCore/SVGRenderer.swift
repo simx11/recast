@@ -67,7 +67,7 @@ public enum SVGRenderer {
         do {
             try await loader.load(html, in: webView)
             // Fails for an SVG WebKit can't parse, which would otherwise come out as an empty page.
-            _ = try await webView.callAsyncJavaScript("await document.images[0].decode(); return true", arguments: [:], in: nil, in: .page)
+            _ = try await webView.callAsyncJavaScript("await document.images[0].decode(); return true", arguments: [:], in: nil, contentWorld: .page)
             let configuration = WKPDFConfiguration()
             configuration.rect = CGRect(origin: .zero, size: size)
             return try await withCheckedThrowingContinuation { continuation in
