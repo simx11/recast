@@ -4,7 +4,7 @@ A native macOS menu bar app that converts images in a single drag.
 
 Start dragging an image in any app, hold your shortcut key, and drop the image on the format you want. Conversion happens on your Mac with Apple's own image frameworks. Nothing is uploaded.
 
-![Dragging an image from a browser, holding ⌃ Control and dropping it on JPEG](docs/demo.gif)
+![Converting a HEIC photo in Finder to JPEG, then an image from a website to PNG, by dragging it, holding ⌃ Control and dropping it on a format](docs/demo.gif)
 
 ## How to use it
 
