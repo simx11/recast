@@ -70,6 +70,7 @@ While converting, Recast:
 | Download the original when a browser only provides a link | See [Privacy](#privacy-and-permissions) |
 | Show in menu bar | Hides the menu bar icon. To get to Settings, open Recast again from Applications or Spotlight |
 | Open Recast at login | Starts Recast automatically |
+| Quit Recast | Quits Recast, also when the menu bar icon is hidden |
 
 **Formats**: which formats appear in the format bar, the quality for JPEG, HEIC and AVIF, and whether to keep metadata.
 

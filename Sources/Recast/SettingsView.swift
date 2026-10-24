@@ -65,6 +65,13 @@ struct GeneralSettingsView: View {
                 if let error = loginItem.error {
                     Text(error).font(.caption).foregroundStyle(.red)
                 }
+                // Without the menu bar icon, this is the only way to quit.
+                LabeledContent {
+                    Button("Quit Recast") { NSApp.terminate(nil) }
+                } label: {
+                    Text("Quit")
+                    Text("Drag to convert stops until you open Recast again.")
+                }
             } header: {
                 Text("App")
             } footer: {
