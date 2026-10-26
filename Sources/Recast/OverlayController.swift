@@ -237,15 +237,12 @@ final class OverlayPanel: NSPanel {
         onCancel()
     }
 
+    /// Shows the panel at full opacity right away. It used to fade in from transparent, but once Recast has had nothing
+    /// on screen for a while macOS can stop running its window animations, and the bar then stayed invisible.
     func show() {
-        if !isVisible {
-            alphaValue = 0
-            orderFrontRegardless()
-        }
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.12
-            animator().alphaValue = 1
-        }
+        // Also cancels a fade-out that's still running.
+        alphaValue = 1
+        orderFrontRegardless()
         invalidateShadow()
     }
 
